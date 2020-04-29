@@ -1,4 +1,5 @@
 from .SbSession import SbSession
+from .weblinks import Weblinks
 from pkg_resources import get_distribution
 from pkg_resources import DistributionNotFound
 

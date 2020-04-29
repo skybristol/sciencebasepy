@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='sciencebasepy',
-    version='1.6.9',
+    version='1.7',
     author="USGS ScienceBase Development Team",
     author_email="sciencebase@usgs.gov",
     description="Python ScienceBase Utilities",
@@ -27,6 +27,9 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6'
     ],
     install_requires=[
-        "requests"
+        "requests",
+        "extruct",
+        "beautifulsoup4",
+        "gis-metadata-parser"
     ]
 )

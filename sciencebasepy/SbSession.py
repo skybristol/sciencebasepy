@@ -24,6 +24,7 @@ import mimetypes
 from pkg_resources import get_distribution
 from pkg_resources import DistributionNotFound
 
+
 class SbSession:
     """SbSession encapsulates a session with ScienceBase, and provides methods for working with ScienceBase Catalog
     Items.
@@ -1249,4 +1250,4 @@ class SbSession:
         """
         related_item_link = self.get_item_link_type_by_name('related')
         return self.create_item_link(from_item_id, to_item_id, related_item_link['id'])
-    
+
