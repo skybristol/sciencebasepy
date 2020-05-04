@@ -17,35 +17,47 @@ class Weblinks:
         self.description = "Module for working with ScienceBase web links"
         self.sb = SbSession()
 
-    def fetch_web_links(self, item_id, link_type=None, link_title=None):
-        """Gets the web links from an item
+    def process_web_links(self, fields="webLinks", item_id=None, item=None, link_type=None, link_title=None):
+        """Processes a ScienceBase Item to return enhanced information on each web link
 
+        :param fields: Specify the item fields to include; defaults to just the webLinks
         :param item_id: ScienceBase Item UUID identifier
+        :param item: Full ScienceBase Item
         :param link_type: Type classification term to filter links
         :param link_title: Title text to filter links; matches exact text
-        :return: webLinks structure from item, filtered if parameterized
+        :return: annotated item containing structured information scraped for each link
         """
-        item = self.sb.get_item(item_id, params={"fields": "webLinks"})
+        if item is None and item_id is None:
+            raise Exception("Must provide either a ScienceBase Item or an item_id")
+
+        if item is None and item_id is not None:
+            item = self.sb.get_item(item_id, params={"fields": fields})
+
+            if item is None:
+                raise Exception("Item could not be found by the supplied item_id")
 
         if "webLinks" not in item.keys():
-            return None
+            return item
 
-        web_links = item["webLinks"]
+        annotated_links = list()
 
-        if link_type is not None:
-            web_links = [l for l in web_links if l["type"] == link_type]
+        for link in item["webLinks"]:
+            if link_type is not None and link["type"] == link_type:
+                annotated_links.append(link)
+                item["webLinks"].next()
+                continue
 
-        if link_title is not None:
-            web_links = [l for l in web_links if l["title"] == link_title]
+            if link_title is not None and link["title"] == link_title:
+                annotated_links.append(link)
+                item["webLinks"].next()
+                continue
 
-        if len(web_links) == 0:
-            return None
+            annotated_links.append(self.link_meta(link))
 
-        simple_item = dict()
-        simple_item["id"] = item_id
-        simple_item["webLinks"] = web_links
+        del item["webLinks"]
+        item["webLinks"] = annotated_links
 
-        return simple_item
+        return item
 
     def get_weblink_response(self, web_link):
         """Retrieves a basic response for a ScienceBase web link object and returns the response with decoration.
@@ -63,10 +75,6 @@ class Weblinks:
             response = requests.get(web_link["uri"],
                                     headers={"Accept": "application/json,application/xhtml+xml,text/html"})
             response.raise_for_status()
-        except HTTPError as http_err:
-            annotated_web_link["annotation"]["content_type"] = "HTTP_ERROR"
-            annotated_web_link["annotation"]["error_message"] = http_err
-            return annotated_web_link, None
         except Exception as err:
             annotated_web_link["annotation"]["content_type"] = "ERROR"
             annotated_web_link["annotation"]["error_message"] = err
@@ -155,15 +163,4 @@ class Weblinks:
 
         return annotated_link
 
-    def process_web_links(self, web_link):
-        """Handles cases where an item has multiple web links
-
-        :param web_link: Dict or list of dicts of ScienceBase Item web link(s)
-        :return: Annotated link(s) with available structured metadata
-        """
-        if isinstance(web_link, dict):
-            return self.link_meta(web_link)
-
-        if isinstance(web_link, list):
-            return [self.link_meta(l) for l in web_link]
 
